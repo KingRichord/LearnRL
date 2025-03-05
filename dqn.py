@@ -75,7 +75,7 @@ def train(q, q_target, memory, optimizer):
         optimizer.step()
 
 def main():
-    env = gym.make('CartPole-v1')
+    env = gym.make('CartPole-v1', render_mode="human")
     q = Qnet()
     q_target = Qnet()
     q_target.load_state_dict(q.state_dict())
@@ -89,7 +89,7 @@ def main():
         epsilon = max(0.01, 0.08 - 0.01*(n_epi/200)) #Linear annealing from 8% to 1%
         s, _ = env.reset()
         done = False
-
+        env.render()
         while not done:
             a = q.sample_action(torch.from_numpy(s).float(), epsilon)      
             s_prime, r, done, truncated, info = env.step(a)
