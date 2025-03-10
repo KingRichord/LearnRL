@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
 
-#Hyperparameters
+#超参数
 learning_rate = 0.0005
 gamma         = 0.98
 lmbda         = 0.95
@@ -97,7 +97,10 @@ def main():
         while not done:
             for t in range(T_horizon):
                 prob = model.pi(torch.from_numpy(s).float())
+                # prob 对应 Categorical 对象表示一个有 m 个可能类别
                 m = Categorical(prob)
+                # 调用 .sample() 时，它会按概率随机选取一个类别
+                # .item() 是 PyTorch 张量（Tensor） 的一个方法，它用于将 单个数值张量 转换为 Python 标量（int 或 float）
                 a = m.sample().item()
                 s_prime, r, done, truncated, info = env.step(a)
 
