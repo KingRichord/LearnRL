@@ -85,13 +85,14 @@ class PPO(nn.Module):
             self.optimizer.step()
         
 def main():
-    env = gym.make('CartPole-v1')
+    env = gym.make('CartPole-v1', render_mode="human")
     model = PPO()
     score = 0.0
     print_interval = 20
 
     for n_epi in range(10000):
         s, _ = env.reset()
+        env.render()
         done = False
         while not done:
             for t in range(T_horizon):
