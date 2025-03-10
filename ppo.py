@@ -26,6 +26,8 @@ class PPO(nn.Module):
     def pi(self, x, softmax_dim = 0):
         x = F.relu(self.fc1(x))
         x = self.fc_pi(x)
+        # 在 softmax_dim = 0 维度计算
+        # F.softmax(x, dim=0) 计算 Softmax，输出 [0.6, 0.4]，所有值加起来等于 1。
         prob = F.softmax(x, dim=softmax_dim)
         return prob
     
@@ -97,13 +99,15 @@ def main():
         while not done:
             for t in range(T_horizon):
                 prob = model.pi(torch.from_numpy(s).float())
+
                 # prob 对应 Categorical 对象表示一个有 m 个可能类别
                 m = Categorical(prob)
                 # 调用 .sample() 时，它会按概率随机选取一个类别
                 # .item() 是 PyTorch 张量（Tensor） 的一个方法，它用于将 单个数值张量 转换为 Python 标量（int 或 float）
                 a = m.sample().item()
+                # a表示动作(要么是 0 ,要么是 1 )
                 s_prime, r, done, truncated, info = env.step(a)
-
+                # 上一时刻状态，上一时刻动作，回报，当前的状态，预测的概率
                 model.put_data((s, a, r/100.0, s_prime, prob[a].item(), done))
                 s = s_prime
 
