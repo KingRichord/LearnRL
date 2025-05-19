@@ -62,6 +62,7 @@ class PPO(nn.Module):
         return s, a, r, s_prime, done_mask, prob_a
 
     def train_net(self):
+        # 每个 batch 重复更新
         s, a, r, s_prime, done_mask, prob_a = self.make_batch()
         for i in range(K_epoch):
             """
@@ -69,25 +70,35 @@ class PPO(nn.Module):
                 如果 advantage > 0：这次摊得比预期好，继续保持！
                 如果 advantage < 0：这次摊得不行，下次少这么干！
             """
-            td_target = r + gamma * self.critic(s_prime) * done_mask  # 这锅实际赚的钱 + 下锅预期
+            # 这锅实际赚的 + 师傅对下锅预期赚的
+            td_target = r + gamma * self.critic(s_prime) * done_mask
+            # 这个误差就是师傅预测(上一时刻)与实际的偏差
             delta = td_target - self.critic(s)
             delta = delta.detach().numpy()
 
-            # GAE优势函数，考虑连续多锅的惊喜值（不只是当前锅）
-            advantage_lst = []
+            # advantage 优势函数，考虑连续多锅的惊喜值（不只是当前锅）
+
+            advantage_list = []
             advantage = 0.0
+            # 遍历每一个误差
             for delta_t in delta[::-1]:
                 advantage = gamma * lmbda * advantage + delta_t[0]
-                advantage_lst.append([advantage])
-            advantage_lst.reverse()
-            advantage = torch.tensor(advantage_lst, dtype=torch.float)
-
-            actor = self.actor(s, softmax_dim=1)
+                advantage_list.append([advantage])
+            advantage_list.reverse()
+            advantage = torch.tensor(advantage_list, dtype=torch.float)
+            # 新actor 执行当前的上一时刻的动作,进而得到->当前策略下动作的概率
+            actor = self.actor(s, softmax_dim=1) # softmax_dim=1 表示子维度，也
             actor_a = actor.gather(1, a)
+            # 剪切（Clipping）机制
+            # actor_a 表示当前策略下动作的概率, prob_a 表示旧策略下动作的概率
             ratio = torch.exp(torch.log(actor_a) - torch.log(prob_a))  # a/b == exp(log(a)-log(b))
-
             surr1 = ratio * advantage
+            # clamp(x, min, max) 将数值 x 限制在 [min, max] 区间内，
+            # 如果 x < min，则返回 min
+            # 如果 x > max，则返回 max
+            # 否则返回 x
             surr2 = torch.clamp(ratio, 1 - eps_clip, 1 + eps_clip) * advantage  # 不许超过±10%的改动
+            # 这里才是集大乘之作，
             loss = -torch.min(surr1, surr2) + F.smooth_l1_loss(self.critic(s), td_target.detach())
 
             self.optimizer.zero_grad()
