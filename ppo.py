@@ -87,7 +87,7 @@ class PPO(nn.Module):
             advantage_list.reverse()
             advantage = torch.tensor(advantage_list, dtype=torch.float)
             # 新actor 执行当前的上一时刻的动作,进而得到->当前策略下动作的概率
-            actor = self.actor(s, softmax_dim=1) # softmax_dim=1 表示子维度，也
+            actor = self.actor(s, softmax_dim=1)  # softmax_dim=1 表示子维度，也
             actor_a = actor.gather(1, a)
             # 剪切（Clipping）机制
             # actor_a 表示当前策略下动作的概率, prob_a 表示旧策略下动作的概率
@@ -121,13 +121,11 @@ def main():
                 # 生成归一化的概率，每行和为 1
                 prob = model.actor(torch.from_numpy(s).float())
                 # prob 对应 Categorical 对象表示一个有 m 个可能类别，且必须满足（必须满足 sum(probs)=1）
-                # 造骰子，并设定其概率
-                m = Categorical(prob)
-                # 调用 .sample() 时，它会按概率随机选取一个类别
+                # Categorical表示集合造骰子，并设定其概率
+                # 调用 .sample() 时，它会按概率随机选取一个类别，表示扔一次骰子
                 # .item() 是 PyTorch 张量（Tensor） 的一个方法，它用于将 单个数值张量 转换为 Python 标量（int 或 float）
-                # m.sample()表示扔一次骰子
-                a = m.sample().item()
                 # a表示动作(要么是 0 ,要么是 1 )
+                a = Categorical(prob).sample().item()
                 # s_prime表示当前状态
                 s_prime, r, done, truncated, info = env.step(a)
                 # 上一时刻状态，上一时刻动作，回报，当前的状态，预测的概率(暂时还不清楚)
