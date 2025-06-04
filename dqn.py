@@ -53,19 +53,26 @@ class Qnet(nn.Module):
         return x
       
     def sample_action(self, obs, epsilon):
+        #(batch_size, 2)
         out = self.forward(obs)
+        # 探索概率 ε-greedy
         coin = random.random()
         if coin < epsilon:
+            # 随机选择一个动作https://zhuanlan.zhihu.com/p/611616897
             return random.randint(0,1)
-        else : 
+        else :
+            # 选择具有最大 Q 值的动作
             return out.argmax().item()
             
 def train(q, q_target, memory, optimizer):
     for i in range(10):
         s,a,r,s_prime,done_mask = memory.sample(batch_size)
-
+        # 计算 Q(s,a)
+        # (batch_size, 2)
         q_out = q(s)
+        # (batch_size, 1) 获取第2维度的状态
         q_a = q_out.gather(1,a)
+        # 获取 s_prime 的最大 Q 值
         max_q_prime = q_target(s_prime).max(1)[0].unsqueeze(1)
         target = r + gamma * max_q_prime * done_mask
         loss = F.smooth_l1_loss(q_a, target)
@@ -76,6 +83,7 @@ def train(q, q_target, memory, optimizer):
 
 def main():
     env = gym.make('CartPole-v1', render_mode="human")
+    # 这里生成两个网络，一个用于训练，一个用于预测
     q = Qnet()
     q_target = Qnet()
     q_target.load_state_dict(q.state_dict())
@@ -86,12 +94,14 @@ def main():
     optimizer = optim.Adam(q.parameters(), lr=learning_rate)
 
     for n_epi in range(10000):
+        # 现象退火
         epsilon = max(0.01, 0.08 - 0.01*(n_epi/200)) #Linear annealing from 8% to 1%
+        # (4)
         s, _ = env.reset()
         done = False
         env.render()
         while not done:
-            a = q.sample_action(torch.from_numpy(s).float(), epsilon)      
+            a = q.sample_action(torch.from_numpy(s).float(), epsilon)
             s_prime, r, done, truncated, info = env.step(a)
             done_mask = 0.0 if done else 1.0
             memory.put((s,a,r/100.0,s_prime, done_mask))
