@@ -70,14 +70,14 @@ class PPO(nn.Module):
                 如果 advantage > 0：这次摊得比预期好，继续保持！
                 如果 advantage < 0：这次摊得不行，下次少这么干！
             """
-            # 这锅实际赚的 + 师傅对下锅预期赚的
+            # (参考结果)当前的分数 + 老师的预期(下一时刻)
             td_target = r + gamma * self.critic(s_prime) * done_mask
-            # 这个误差就是师傅预测(上一时刻)与实际的偏差
+            # (当前结果)老师预测的上一时刻 self.critic(s)
+            # 这个误差就是参考结果与当前结果的差异
             delta = td_target - self.critic(s)
             delta = delta.detach().numpy()
 
             # advantage 优势函数，考虑连续多锅的惊喜值（不只是当前锅）
-
             advantage_list = []
             advantage = 0.0
             # 遍历每一个误差
