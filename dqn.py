@@ -58,7 +58,7 @@ class Qnet(nn.Module):
         # 探索概率 ε-greedy
         coin = random.random()
         if coin < epsilon:
-            # 随机选择一个动作https://zhuanlan.zhihu.com/p/611616897
+            # 随机选择一个动作,在CartPole-v1中，动作有两个(0,1)
             return random.randint(0,1)
         else :
             # 选择具有最大 Q 值的动作
@@ -94,16 +94,18 @@ def main():
     optimizer = optim.Adam(q.parameters(), lr=learning_rate)
 
     for n_epi in range(10000):
-        # 现象退火
+        # 降低探索率阈值
         epsilon = max(0.01, 0.08 - 0.01*(n_epi/200)) #Linear annealing from 8% to 1%
         # (4)
         s, _ = env.reset()
         done = False
         env.render()
         while not done:
+            # 根据探索率和ε-greedy策略选择动作
             a = q.sample_action(torch.from_numpy(s).float(), epsilon)
             s_prime, r, done, truncated, info = env.step(a)
             done_mask = 0.0 if done else 1.0
+            # 保存动作
             memory.put((s,a,r/100.0,s_prime, done_mask))
             s = s_prime
 
