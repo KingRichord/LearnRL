@@ -71,9 +71,11 @@ def train(q, q_target, memory, optimizer):
         # (batch_size, 2)
         q_out = q(s)
         # (batch_size, 1) 获取第2维度的状态
+        # (当前结果)
         q_a = q_out.gather(1,a)
         # 获取 s_prime 的最大 Q 值
         max_q_prime = q_target(s_prime).max(1)[0].unsqueeze(1)
+        # (参考结果)现状态做动作后拿到分数 = 当前奖励 + 下一步最好的预期分数(老师)
         target = r + gamma * max_q_prime * done_mask
         loss = F.smooth_l1_loss(q_a, target)
         
@@ -117,6 +119,7 @@ def main():
             train(q, q_target, memory, optimizer)
 
         if n_epi%print_interval==0 and n_epi!=0:
+            # 每隔一段时间更新目标网络，这样可以使得q网络更加稳定
             q_target.load_state_dict(q.state_dict())
             print("n_episode :{}, score : {:.1f}, n_buffer : {}, eps : {:.1f}%".format(
                                                             n_epi, score/print_interval, memory.size(), epsilon*100))
