@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-#Hyperparameters
+# 超参数
 learning_rate = 0.0005
 gamma         = 0.98
 buffer_limit  = 50000
@@ -98,7 +98,7 @@ def main():
     for n_epi in range(10000):
         # 降低探索率阈值
         epsilon = max(0.01, 0.08 - 0.01*(n_epi/200)) #Linear annealing from 8% to 1%
-        # (4)
+        # (state_dim = 4)
         s, _ = env.reset()
         done = False
         env.render()
