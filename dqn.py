@@ -51,11 +51,11 @@ class Qnet(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-      
+    # 行动策略使用ε-greedy策略(off-policy的体现)
     def sample_action(self, obs, epsilon):
         #(batch_size, 2)
         out = self.forward(obs)
-        # 探索概率 ε-greedy
+        # Q函数增加随机性的方式之一是ε-greedy策略，即在一定概率下随机选择动作，以探索更多可能的动作
         coin = random.random()
         if coin < epsilon:
             # 随机选择一个动作,在CartPole-v1中，动作有两个(0,1)
@@ -73,7 +73,7 @@ def train(q, q_target, memory, optimizer):
         # (batch_size, 1) 获取第2维度的状态
         # (当前结果)
         q_a = q_out.gather(1,a)
-        # 获取 s_prime 的最大 Q 值
+        # 评价更新策略(off-policy的体现) 采用最大 Q 值
         max_q_prime = q_target(s_prime).max(1)[0].unsqueeze(1)
         # (参考结果)现状态做动作后拿到分数 = 当前奖励 + 下一步最好的预期分数(老师)
         target = r + gamma * max_q_prime * done_mask
