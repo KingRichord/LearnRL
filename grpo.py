@@ -4,12 +4,10 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from torch.distributions import Categorical
-import os
 
 # The key differences in the hyperparameters for GRPO are the KL target and KL beta
 # The KL target is the target KL divergence for adaptive adjustment
 # The KL beta is the initial weight of the KL penalty term
-
 
 HYPERPARAMETERS_GRPO = {
     'LR': 2e-4,  # Learning rate
@@ -24,12 +22,7 @@ HYPERPARAMETERS_GRPO = {
 }
 
 
-
-# Define Actor-Critic Network for GRPO : slightly different from PPO 
 class ActorCriticGRPO(nn.Module):
-    """
-    Actor-Critic network for GRPO.
-    """
     def __init__(self, state_dim, action_dim):
         super(ActorCriticGRPO, self).__init__()
         self.actor = nn.Sequential(
@@ -151,7 +144,7 @@ if __name__ == "__main__":
 
     seeds = np.random.randint(0, 123456, num_seeds)
 
-    num_episodes =1000 # Increase number of episodes for GRPO training
+    num_episodes =100000 # Increase number of episodes for GRPO training
 
     print(f"Training GRPO agent on {env_name} environment.")
     for seed in seeds:
@@ -187,14 +180,6 @@ if __name__ == "__main__":
             grpo_agent.optimize()
             if (episode + 1) % 10 == 0:
                 print(f"Seed {seed} - Episode {episode+1}: Reward = {episode_reward}")
-                rewards.append(episode_reward)
-
-        # Save rewards for this seed
-        os.makedirs("results_grpo", exist_ok=True)
-        np.savetxt(f"results_grpo/rewards_{env_name}_seed{seed}.csv", rewards, delimiter=",")
         env.close()
 
     print("Training complete.")
-
-# The code snippet above trains both the PPO and GRPO agents on the CartPole environment using the same hyperparameters. 
-# The rewards for each seed are saved to separate CSV files for analysis.
