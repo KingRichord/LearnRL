@@ -59,6 +59,7 @@ class GRPO:
         self.kl_beta = HYPERPARAMETERS_GRPO['KL_BETA']
         self.action_dim = action_dim
 
+
     def select_action(self, state):
         state = torch.tensor(np.array(state), dtype=torch.float32)
         action_probs, _ = self.policy(state)
@@ -76,7 +77,6 @@ class GRPO:
         """
         Update the policy using stored memory transitions.
         """
-
         states, actions, log_probs_old, rewards, dones, old_action_probs = zip(*self.memory)
 
         states = torch.tensor(np.array(states), dtype=torch.float32)
@@ -132,13 +132,11 @@ class GRPO:
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-
         self.memory.clear()
 
 
 if __name__ == "__main__":
     # Run multiple seeds to analyze variance in rewards
-    env_name = "CartPole-v1"  # Other options: "LunarLander-v2", "Pendulum-v0"
     num_seeds = 5
     num_episodes = 200
 
@@ -146,23 +144,19 @@ if __name__ == "__main__":
 
     num_episodes =100000 # Increase number of episodes for GRPO training
 
-    print(f"Training GRPO agent on {env_name} environment.")
     for seed in seeds:
         torch.manual_seed(seed)
         np.random.seed(seed)
 
-        env = gym.make("CartPole-v1", render_mode="human")
+        env = gym.make("CartPole-v1")
         state_dim = env.observation_space.shape[0]
         action_dim = env.action_space.n
 
-        # Initialize GRPO agent
         grpo_agent = GRPO(state_dim, action_dim)
-        rewards = []
 
         for episode in range(num_episodes):
             state = env.reset()
-            env.render()
-            # Fix for Gym version compatibility:
+
             if isinstance(state, tuple):
                 state, _ = state  # Unpack (state, info) when gym returns a tuple
             state = np.array(state, dtype=np.float32)  # Ensure it's a proper NumPy array
