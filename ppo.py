@@ -87,7 +87,7 @@ class PPO(nn.Module):
             advantage_list.reverse()
             advantage = torch.tensor(advantage_list, dtype=torch.float)
             # 新actor 执行当前的上一时刻的动作,进而得到->当前策略下动作的概率
-            actor = self.actor(s, softmax_dim=1)  # softmax_dim=1 表示子维度，也
+            actor = self.actor(s, softmax_dim=1)
             actor_a = actor.gather(1, a)
             # 剪切（Clipping）机制
             # actor_a 表示当前策略下动作的概率, prob_a 表示旧策略下动作的概率
@@ -98,7 +98,7 @@ class PPO(nn.Module):
             # 如果 x > max，则返回 max
             # 否则返回 x
             surr2 = torch.clamp(ratio, 1 - eps_clip, 1 + eps_clip) * advantage  # 不许超过±10%的改动
-            # 这里才是集大乘之作，
+            # 这里才是集大乘之作
             loss = -torch.min(surr1, surr2) + F.smooth_l1_loss(self.critic(s), td_target.detach())
 
             self.optimizer.zero_grad()
